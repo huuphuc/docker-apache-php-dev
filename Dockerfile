@@ -2,10 +2,10 @@ FROM ubuntu:18.04
 
 MAINTAINER phucnh <phucbkit@gmail.com>
 
-ENV PHP=7.3 \
+ENV PHP=8.0 \
     DEBIAN_FRONTEND=noninteractive \
     WORKDIR=/var/www/dev \
-    PHP_PATH=/etc/php/7.3 \
+    PHP_PATH=/etc/php/8.0 \
     APACHE_PATH=/etc/apache2 \
     SUPEVISOR_CONF=/etc/supervisor/conf.d
 
@@ -25,7 +25,6 @@ RUN apt-get update -y && apt-get -y dist-upgrade \
     php${PHP}-zip \
     php${PHP}-intl \
     php${PHP}-xml \
-    php${PHP}-json \
     php${PHP}-curl \
     php${PHP}-gd \
     php${PHP}-mysql \
