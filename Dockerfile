@@ -1,13 +1,10 @@
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 MAINTAINER phucnh <phucbkit@gmail.com>
 
-ENV PHP=8.0 \
-    DEBIAN_FRONTEND=noninteractive \
-    WORKDIR=/var/www/dev \
-    PHP_PATH=/etc/php/8.0 \
-    APACHE_PATH=/etc/apache2 \
-    SUPEVISOR_CONF=/etc/supervisor/conf.d
+ARG PHP_VERSION=8.1
+ENV DEBIAN_FRONTEND=noninteractive \
+    WORKDIR=/var/www/dev
 
 RUN apt-get update -y && apt-get -y dist-upgrade \
     && apt-get install -y gnupg software-properties-common \
@@ -16,22 +13,22 @@ RUN apt-get update -y && apt-get -y dist-upgrade \
     && apt-get install -y --no-install-recommends vim curl unzip git supervisor \
     && apt-get install -y --no-install-recommends \
     apache2 \
-    php${PHP} \
+    php${PHP_VERSION} \
     php-pear \
-    libapache2-mod-php${PHP} \
-    php${PHP}-cli \
-    php${PHP}-readline \
-    php${PHP}-mbstring \
-    php${PHP}-zip \
-    php${PHP}-intl \
-    php${PHP}-xml \
-    php${PHP}-curl \
-    php${PHP}-gd \
-    php${PHP}-mysql \
-    php${PHP}-bcmath \
-    php${PHP}-bz2 \
-    php${PHP}-dev \
-    && rm -rf ${APACHE_PATH}/sites-enabled/000-default.conf /var/www/html \
+    libapache2-mod-php${PHP_VERSION} \
+    php${PHP_VERSION}-cli \
+    php${PHP_VERSION}-readline \
+    php${PHP_VERSION}-mbstring \
+    php${PHP_VERSION}-zip \
+    php${PHP_VERSION}-intl \
+    php${PHP_VERSION}-xml \
+    php${PHP_VERSION}-curl \
+    php${PHP_VERSION}-gd \
+    php${PHP_VERSION}-mysql \
+    php${PHP_VERSION}-bcmath \
+    php${PHP_VERSION}-bz2 \
+    php${PHP_VERSION}-dev \
+    && rm -rf /etc/apache2/sites-enabled/000-default.conf /var/www/html \
     && a2enmod rewrite \
     && curl -sS https://getcomposer.org/installer | php \
     && mv composer.phar /usr/local/bin/composer \
@@ -42,10 +39,10 @@ RUN apt-get update -y && apt-get -y dist-upgrade \
     && rm -rf /var/lib/apt/lists/*
 
 
-COPY ./configs/apache2.conf ${APACHE_PATH}/apache2.conf
-COPY ./configs/app.conf ${APACHE_PATH}/sites-enabled/app.conf
-COPY ./configs/php.ini ${PHP_PATH}/apache2/conf.d/custom.ini
-COPY ./configs/supervisor.conf ${SUPEVISOR_CONF}/dev.conf
+COPY ./configs/apache2.conf /etc/apache2/apache2.conf
+COPY ./configs/app.conf /etc/apache2/sites-enabled/app.conf
+COPY ./configs/php.ini /etc/php/${PHP_VERSION}/apache2/conf.d/custom.ini
+COPY ./configs/supervisor.conf /etc/supervisor/conf.d/dev.conf
 
 EXPOSE 80/tcp \
        443/tcp

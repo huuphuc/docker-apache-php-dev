@@ -2,10 +2,10 @@ version: "3.5"
 services:
   php:
     working_dir: /var/www/dev
-    image: php-dev
+    image: apache-php-dev
     volumes:
       - .:/var/www/dev:cached
     environment:
       APP_DEBUG: "true"
     ports:
-      - 127.0.0.1:8089:80
+      - "127.0.0.1:8089:80"
