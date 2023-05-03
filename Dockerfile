@@ -6,12 +6,11 @@ ARG PHP_VERSION=8.1
 ENV DEBIAN_FRONTEND=noninteractive \
     WORKDIR=/var/www/dev
 
-RUN apt-get update -y && apt-get -y dist-upgrade \
-    && apt-get install -y gnupg software-properties-common \
-    && add-apt-repository ppa:ondrej/php \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends vim curl unzip git supervisor \
-    && apt-get install -y --no-install-recommends \
+RUN apt update -y && apt -y upgrade \
+    && apt install -y --no-install-recommends vim curl unzip git supervisor
+RUN apt install -y gnupg software-properties-common \
+    && add-apt-repository ppa:ondrej/php && apt update -y
+RUN apt install -y --no-install-recommends \
     apache2 \
     php${PHP_VERSION} \
     php-pear \
