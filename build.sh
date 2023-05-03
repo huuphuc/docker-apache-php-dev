@@ -2,7 +2,7 @@
 
 PHP_VERSION=$1
 if [ "${PHP_VERSION}" == "" ]; then
-  PHP_VERSION=8.1
+  PHP_VERSION=8.2
 fi
 VERSION="${PHP_VERSION}-v1.0"
 

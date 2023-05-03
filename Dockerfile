@@ -1,14 +1,14 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 MAINTAINER phucnh <phucbkit@gmail.com>
 
-ARG PHP_VERSION=8.1
+ARG PHP_VERSION=8.2
 ENV DEBIAN_FRONTEND=noninteractive \
     WORKDIR=/var/www/dev
 
 RUN apt update -y && apt -y upgrade \
     && apt install -y --no-install-recommends vim curl unzip git supervisor
-RUN apt install -y gnupg software-properties-common \
+RUN apt install -y lsb-release gnupg2 software-properties-common \
     && add-apt-repository ppa:ondrej/php && apt update -y
 RUN apt install -y --no-install-recommends \
     apache2 \
