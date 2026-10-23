@@ -1,0 +1,51 @@
+# Smoke test for the image, run by build.sh with dgoss.
+# The container is started with EXPECTED_PHP_VERSION (e.g. 8.5) and PHP_MEMORY_LIMIT=321M.
+port:
+  tcp:80:
+    listening: true
+
+http:
+  http://localhost/:
+    status: 200
+    timeout: 5000
+    body:
+      - "It works! PHP {{.Env.EXPECTED_PHP_VERSION}}."
+
+command:
+  apache2 runs under supervisor:
+    exec: supervisorctl status
+    exit-status: 0
+    stdout:
+      - "/^apache2 +RUNNING/"
+
+  CLI runs the expected PHP version:
+    exec: php -r 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION;'
+    exit-status: 0
+    stdout:
+      - "/^{{.Env.EXPECTED_PHP_VERSION}}$/"
+
+  custom php.ini is loaded for the CLI:
+    exec: php -r 'echo ini_get("display_errors");'
+    exit-status: 0
+    stdout:
+      - "/^1$/"
+
+  PHP_MEMORY_LIMIT reaches the CLI:
+    exec: php -r 'echo ini_get("memory_limit");'
+    exit-status: 0
+    stdout:
+      - "/^321M$/"
+
+  PHP_MEMORY_LIMIT reaches mod_php:
+    exec: sh -c 'echo "<?php echo ini_get(\"memory_limit\");" > /var/www/dev/public/_ini.php && curl -fsS http://localhost/_ini.php'
+    exit-status: 0
+    stdout:
+      - "/^321M$/"
+
+  composer runs:
+    exec: composer --version
+    exit-status: 0
+
+  pecl build tools are installed:
+    exec: sh -c 'command -v phpize && command -v gcc && command -v make'
+    exit-status: 0
