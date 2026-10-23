@@ -48,7 +48,7 @@ echo "OK   cli: PHP ${cli_version}"
   || fail "custom php.ini is not loaded for the CLI"
 echo "OK   cli: custom php.ini loaded"
 
-"${DC[@]}" exec -T php composer --version >/dev/null || fail "composer is not runnable"
+"${DC[@]}" exec -T php composer --version >/dev/null 2>&1 || fail "composer is not runnable"
 echo "OK   composer installed"
 
 echo "PASS"

@@ -1,7 +1,8 @@
 # apache-php-dev
 
 Apache 2.4 + PHP (mod_php) on Ubuntu 22.04, for **local development**.
-Docker Hub: [`huuphuc/apache-php-dev`](https://hub.docker.com/r/huuphuc/apache-php-dev)
+Docker Hub: [`huuphuc/apache-php-dev`](https://hub.docker.com/r/huuphuc/apache-php-dev) ·
+Source: [`huuphuc/docker-apache-php-dev`](https://github.com/huuphuc/docker-apache-php-dev)
 
 > **Development only.** Errors are displayed in the browser (`display_errors = On`,
 > `error_reporting = E_ALL`) and the image ships build tools (`php-dev`, `git`, `vim`).
@@ -9,13 +10,18 @@ Docker Hub: [`huuphuc/apache-php-dev`](https://hub.docker.com/r/huuphuc/apache-p
 
 ## Tags
 
-| Tag                          | Meaning                                                        |
-| ---------------------------- | -------------------------------------------------------------- |
-| `<php>` e.g. `8.2`           | Latest build of that PHP version. Moves on every rebuild.      |
-| `<php>-<YYYYMMDD>` e.g. `8.2-20261023` | The build from that day. Pin this for reproducibility (only a rebuild on the same day replaces it). |
-| `latest`                     | The default PHP version (currently `8.2`).                     |
+PHP versions: **8.2, 8.3, 8.4, 8.5**. Every tag is available for `linux/amd64` and `linux/arm64`.
 
-Older `<php>-v1.0` tags (e.g. `8.2-v1.0`) are no longer updated.
+| Tag | Meaning |
+| --- | --- |
+| `<php>`, e.g. `8.5` | Newest build of that PHP version. Moves whenever the image is rebuilt. |
+| `<php>-v<release>`, e.g. `8.5-v1.1.0` | A release of this repository. Never overwritten; pin this for reproducible setups. |
+| `<php>-<YYYYMMDD>`, e.g. `8.5-20261023` | A rebuild made on that day to pick up PHP/Ubuntu updates. Only another rebuild on the same day replaces it. |
+| `latest` | The default PHP version (currently `8.2`). |
+
+The PHP patch version inside each build is listed in the summary of the
+[Publish workflow run](https://github.com/huuphuc/docker-apache-php-dev/actions/workflows/publish.yml) that built it.
+Tags ending in `-v1.0` (e.g. `8.2-v1.0`) are from the old build script and are no longer updated.
 
 ## Quick start
 
@@ -73,15 +79,28 @@ hosts. Use `docker compose exec -u www-data php ...`, or fix ownership afterward
 
 **HTTPS** is not configured. Only port 80 is served.
 
-## Building
+## Building locally
 
 ```bash
-./build.sh            # build the default version (ARG PHP_VERSION in the Dockerfile), test it, push it
-./build.sh 8.3        # build, test and push PHP 8.3
-NO_PUSH=1 ./build.sh 8.3   # build and test only; nothing is pushed
-./test.sh 8.3         # smoke-test the locally built "apache-php-dev" image
+./build.sh        # build and test the default version (ARG PHP_VERSION in the Dockerfile)
+./build.sh 8.3    # build and test PHP 8.3
+./test.sh 8.3     # re-run the smoke test against the locally built "apache-php-dev" image
 ```
 
-`build.sh` pushes to Docker Hub only after `test.sh` passes. It pushes `<php>` and `<php>-<YYYYMMDD>`,
-and `latest` only when building the default version. You need to be logged in (`docker login`)
-to push.
+Local builds are tagged `apache-php-dev` and are never pushed.
+
+## Releasing (maintainers)
+
+Images are published to Docker Hub only by GitHub Actions. Pull requests and pushes to `main`
+build and test every version on both architectures, but publish nothing.
+
+- **Release:** push a git tag, e.g. `git tag v1.1.0 && git push origin v1.1.0`. All versions are
+  published as `<php>-v1.1.0`, `<php>` and `latest`. A release tag that already exists on Docker Hub
+  is never overwritten; the run fails instead.
+- **Rebuild for PHP/Ubuntu updates:** Actions → **Publish** → **Run workflow**, optionally with a
+  comma-separated list of versions (e.g. `8.5`). Publishes `<php>-<YYYYMMDD>` and `<php>`.
+
+Nothing is tagged on Docker Hub unless every selected version builds and passes `test.sh` on both
+architectures. Supported versions are listed in [`.github/php-versions.json`](.github/php-versions.json);
+the default version (`latest`) is `ARG PHP_VERSION` in the [`Dockerfile`](Dockerfile).
+Each publish also copies this README to the Docker Hub description.
