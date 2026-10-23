@@ -115,6 +115,9 @@ jobs:
           context: .
           platforms: linux/${{ matrix.arch }}
           build-args: PHP_VERSION=${{ matrix.php }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ matrix.php }}-${{ needs.prepare.outputs.suffix }}
           outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digest

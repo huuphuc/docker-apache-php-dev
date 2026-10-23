@@ -1,7 +1,8 @@
 FROM ubuntu:22.04
 
 LABEL org.opencontainers.image.authors="huuphuc <phucbkit@gmail.com>" \
-      org.opencontainers.image.description="Apache + PHP (mod_php) image for local development"
+      org.opencontainers.image.description="Apache + PHP (mod_php) image for local development" \
+      org.opencontainers.image.source="https://github.com/huuphuc/docker-apache-php-dev"
 
 ENV DEBIAN_FRONTEND=noninteractive \
     WORKDIR=/var/www/dev
