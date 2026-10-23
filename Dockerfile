@@ -1,16 +1,25 @@
 FROM ubuntu:22.04
 
-MAINTAINER phucnh <phucbkit@gmail.com>
+LABEL org.opencontainers.image.authors="huuphuc <phucbkit@gmail.com>" \
+      org.opencontainers.image.description="Apache + PHP (mod_php) image for local development"
 
-ARG PHP_VERSION=8.2
 ENV DEBIAN_FRONTEND=noninteractive \
     WORKDIR=/var/www/dev
 
-RUN apt update -y && apt -y upgrade \
-    && apt install -y --no-install-recommends vim curl unzip git supervisor
-RUN apt install -y lsb-release gnupg2 software-properties-common \
-    && add-apt-repository ppa:ondrej/php && apt update -y
-RUN apt install -y --no-install-recommends \
+# Base tools + ondrej/php PPA. Kept independent of PHP_VERSION so this layer
+# is shared between builds of different PHP versions.
+RUN apt-get update -y && apt-get -y upgrade \
+    && apt-get install -y --no-install-recommends \
+       ca-certificates vim curl unzip git make supervisor \
+       gnupg2 software-properties-common \
+    && add-apt-repository -y ppa:ondrej/php \
+    && apt-get purge -y --auto-remove software-properties-common gnupg2 \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG PHP_VERSION=8.2
+
+RUN apt-get update -y \
+    && apt-get install -y --no-install-recommends \
     apache2 \
     php${PHP_VERSION} \
     php-pear \
@@ -29,21 +38,24 @@ RUN apt install -y --no-install-recommends \
     php${PHP_VERSION}-dev \
     && rm -rf /etc/apache2/sites-enabled/000-default.conf /var/www/html \
     && a2enmod rewrite \
-    && curl -sS https://getcomposer.org/installer | php \
-    && mv composer.phar /usr/local/bin/composer \
-    && mkdir -p ${WORKDIR} \
-    && chown www-data:www-data ${WORKDIR} \
-    && apt-get -y autoremove \
+    && ln -sfT /dev/stderr /var/log/apache2/error.log \
+    && ln -sfT /dev/stdout /var/log/apache2/access.log \
+    && a2disconf other-vhosts-access-log \
+    && mkdir -p ${WORKDIR}/public \
+    && chown -R www-data:www-data ${WORKDIR} \
     && apt-get -y clean \
     && rm -rf /var/lib/apt/lists/*
 
-
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 COPY ./configs/apache2.conf /etc/apache2/apache2.conf
 COPY ./configs/app.conf /etc/apache2/sites-enabled/app.conf
 COPY ./configs/php.ini /etc/php/${PHP_VERSION}/apache2/conf.d/custom.ini
+COPY ./configs/php.ini /etc/php/${PHP_VERSION}/cli/conf.d/custom.ini
 COPY ./configs/supervisor.conf /etc/supervisor/conf.d/dev.conf
+COPY --chown=www-data:www-data ./public/ ${WORKDIR}/public/
 
-EXPOSE 80/tcp \
-       443/tcp
+WORKDIR ${WORKDIR}
 
-CMD ["/usr/bin/supervisord"]
+EXPOSE 80/tcp
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
