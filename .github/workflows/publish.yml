@@ -105,7 +105,18 @@ jobs:
       - name: Smoke test
         run: |
           ./test.sh "${{ matrix.php }}"
-          echo "PHP ${{ matrix.php }} (${{ matrix.arch }}): $(docker run --rm apache-php-dev php -r 'echo PHP_VERSION;')" >> "$GITHUB_STEP_SUMMARY"
+          php_full=$(docker run --rm apache-php-dev php -r 'echo PHP_VERSION;')
+          echo "PHP ${{ matrix.php }} (${{ matrix.arch }}): ${php_full}" >> "$GITHUB_STEP_SUMMARY"
+          mkdir -p /tmp/php-version
+          printf '%s\n' "${php_full}" > "/tmp/php-version/${{ matrix.php }}"
+
+      - uses: actions/upload-artifact@v7
+        if: matrix.arch == 'amd64'
+        with:
+          name: php-version-${{ matrix.php }}
+          path: /tmp/php-version/*
+          if-no-files-found: error
+          retention-days: 1
 
       # Same build as above, served from the builder's local cache.
       - name: Push by digest
@@ -185,12 +196,39 @@ jobs:
             for tag in "${tags[@]}"; do echo "- \`$tag\`"; done
           } >> "$GITHUB_STEP_SUMMARY"
 
-  dockerhub-description:
-    name: Update Docker Hub description
-    needs: publish
+  docs:
+    name: Update README and Docker Hub description
+    needs: [prepare, publish]
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: /tmp/php-version
+          pattern: php-version-*
+          merge-multiple: true
+
+      # Commits made with GITHUB_TOKEN do not trigger other workflows.
+      - name: Update PHP versions in README
+        env:
+          DEFAULT_PHP: ${{ needs.prepare.outputs.default }}
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/update-php-versions.py README.md .github/php-versions.json "$DEFAULT_PHP" /tmp/php-version
+          if git diff --quiet README.md; then
+            echo "README already lists these PHP versions."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "README: update PHP versions"
+          git push origin HEAD:main
 
       # Requires a Docker Hub token with Read, Write, Delete scope.
       - uses: peter-evans/dockerhub-description@v5

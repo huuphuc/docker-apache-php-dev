@@ -10,16 +10,26 @@ Source: [`huuphuc/docker-apache-php-dev`](https://github.com/huuphuc/docker-apac
 
 ## Tags
 
-PHP versions: **8.2, 8.3, 8.4, 8.5**. Every tag is available for `linux/amd64` and `linux/arm64`.
+Every tag is available for `linux/amd64` and `linux/arm64`. Current PHP version of each tag
+(updated automatically on every publish):
+
+<!-- php-versions:start -->
+| Tag | PHP |
+| --- | --- |
+| `8.2`, `latest` | 8.2.35 |
+| `8.3` | 8.3.36 |
+| `8.4` | 8.4.27 |
+| `8.5` | 8.5.12 |
+<!-- php-versions:end -->
 
 | Tag | Meaning |
 | --- | --- |
 | `<php>`, e.g. `8.5` | Newest build of that PHP version. Moves whenever the image is rebuilt. |
-| `<php>-v<release>`, e.g. `8.5-v1.1.0` | A release of this repository. Never overwritten; pin this for reproducible setups. |
+| `<php>-v<release>`, e.g. `8.5-v1.1` | A release of this repository. Never overwritten; pin this for reproducible setups. |
 | `<php>-<YYYYMMDD>`, e.g. `8.5-20261023` | A rebuild made on that day to pick up PHP/Ubuntu updates. Only another rebuild on the same day replaces it. |
 | `latest` | The default PHP version (currently `8.2`). |
 
-The PHP patch version inside each build is listed in the summary of the
+The PHP version inside a pinned tag (`-v<release>`, `-<YYYYMMDD>`) is listed in the summary of the
 [Publish workflow run](https://github.com/huuphuc/docker-apache-php-dev/actions/workflows/publish.yml) that built it.
 Tags ending in `-v1.0` (e.g. `8.2-v1.0`) are from the old build script and are no longer updated.
 
@@ -94,8 +104,8 @@ Local builds are tagged `apache-php-dev` and are never pushed.
 Images are published to Docker Hub only by GitHub Actions. Pull requests and pushes to `main`
 build and test every version on both architectures, but publish nothing.
 
-- **Release:** push a git tag, e.g. `git tag v1.1.0 && git push origin v1.1.0`. All versions are
-  published as `<php>-v1.1.0`, `<php>` and `latest`. A release tag that already exists on Docker Hub
+- **Release:** push a git tag, e.g. `git tag v1.1 && git push origin v1.1`. All versions are
+  published as `<php>-v1.1`, `<php>` and `latest`. A release tag that already exists on Docker Hub
   is never overwritten; the run fails instead.
 - **Rebuild for PHP/Ubuntu updates:** Actions → **Publish** → **Run workflow**, optionally with a
   comma-separated list of versions (e.g. `8.5`). Publishes `<php>-<YYYYMMDD>` and `<php>`.
