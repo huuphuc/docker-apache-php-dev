@@ -4,7 +4,7 @@
 Usage: update-php-versions.py README.md php-versions.json LATEST_PHP [VERSION_DIR]
 
 VERSION_DIR holds one file per published minor version, e.g. a file "8.5"
-containing "8.5.12". Versions not published in this run keep the value already
+whose first field is the full PHP version ("8.5.12 ..."). Versions not published in this run keep the value already
 in the README; versions no longer listed in php-versions.json are dropped.
 """
 import json
@@ -27,7 +27,7 @@ block, tail = rest.split(END, 1)
 versions = dict(re.findall(r"^\| `(\d+\.\d+)`[^|]*\| (\d+\.\d+\.\d+) \|", block, re.M))
 if version_dir and version_dir.is_dir():
     for f in version_dir.iterdir():
-        versions[f.name] = f.read_text().strip()
+        versions[f.name] = f.read_text().split()[0]
 
 rows = ["| Tag | PHP |", "| --- | --- |"]
 for minor in supported:

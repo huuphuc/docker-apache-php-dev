@@ -105,16 +105,18 @@ jobs:
       - name: Smoke test
         run: |
           ./test.sh "${{ matrix.php }}"
-          php_full=$(docker run --rm apache-php-dev php -r 'echo PHP_VERSION;')
-          echo "PHP ${{ matrix.php }} (${{ matrix.arch }}): ${php_full}" >> "$GITHUB_STEP_SUMMARY"
-          mkdir -p /tmp/php-version
-          printf '%s\n' "${php_full}" > "/tmp/php-version/${{ matrix.php }}"
+          # "<php> <apache package> <ubuntu>", e.g. "8.5.12 2.4.52-1ubuntu4.16 22.04.5"
+          info=$(docker run --rm apache-php-dev sh -c \
+            'echo "$(php -r "echo PHP_VERSION;") $(dpkg-query -W -f="\${Version}" apache2) $(. /etc/os-release; echo "${VERSION%% *}")"')
+          echo "PHP ${{ matrix.php }} (${{ matrix.arch }}): ${info}" >> "$GITHUB_STEP_SUMMARY"
+          mkdir -p /tmp/image-info
+          printf '%s\n' "${info}" > "/tmp/image-info/${{ matrix.php }}"
 
       - uses: actions/upload-artifact@v7
         if: matrix.arch == 'amd64'
         with:
-          name: php-version-${{ matrix.php }}
-          path: /tmp/php-version/*
+          name: image-info-${{ matrix.php }}
+          path: /tmp/image-info/*
           if-no-files-found: error
           retention-days: 1
 
@@ -209,9 +211,29 @@ jobs:
 
       - uses: actions/download-artifact@v8
         with:
-          path: /tmp/php-version
-          pattern: php-version-*
+          path: /tmp/image-info
+          pattern: image-info-*
           merge-multiple: true
+
+      - name: Release note table
+        env:
+          SUFFIX: ${{ needs.prepare.outputs.suffix }}
+          LATEST_PHP: ${{ needs.prepare.outputs.latest }}
+        run: |
+          set -euo pipefail
+          {
+            echo "### Versions (copy into the release note)"
+            echo
+            echo "| Tag | PHP | Apache | Ubuntu |"
+            echo "| --- | --- | --- | --- |"
+            for minor in $(jq -r '.[]' .github/php-versions.json); do
+              [[ -f "/tmp/image-info/$minor" ]] || continue
+              read -r php apache ubuntu < "/tmp/image-info/$minor"
+              tags="\`$minor-$SUFFIX\`, \`$minor\`"
+              if [[ "$minor" == "$LATEST_PHP" ]]; then tags+=", \`latest\`"; fi
+              echo "| $tags | $php | $apache | $ubuntu |"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
 
       # Commits made with GITHUB_TOKEN do not trigger other workflows.
       - name: Update PHP versions in README
@@ -219,7 +241,7 @@ jobs:
           LATEST_PHP: ${{ needs.prepare.outputs.latest }}
         run: |
           set -euo pipefail
-          python3 .github/scripts/update-php-versions.py README.md .github/php-versions.json "$LATEST_PHP" /tmp/php-version
+          python3 .github/scripts/update-php-versions.py README.md .github/php-versions.json "$LATEST_PHP" /tmp/image-info
           if git diff --quiet README.md; then
             echo "README already lists these PHP versions."
             exit 0
