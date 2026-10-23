@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Rewrite the PHP version table in README.md.
 
-Usage: update-php-versions.py README.md php-versions.json DEFAULT_PHP [VERSION_DIR]
+Usage: update-php-versions.py README.md php-versions.json LATEST_PHP [VERSION_DIR]
 
 VERSION_DIR holds one file per published minor version, e.g. a file "8.5"
 containing "8.5.12". Versions not published in this run keep the value already
@@ -17,7 +17,7 @@ END = "<!-- php-versions:end -->"
 
 readme_path = pathlib.Path(sys.argv[1])
 supported = json.loads(pathlib.Path(sys.argv[2]).read_text())
-default = sys.argv[3]
+latest = sys.argv[3]
 version_dir = pathlib.Path(sys.argv[4]) if len(sys.argv) > 4 else None
 
 readme = readme_path.read_text()
@@ -31,7 +31,7 @@ if version_dir and version_dir.is_dir():
 
 rows = ["| Tag | PHP |", "| --- | --- |"]
 for minor in supported:
-    tags = f"`{minor}`" + (", `latest`" if minor == default else "")
+    tags = f"`{minor}`" + (", `latest`" if minor == latest else "")
     rows.append(f"| {tags} | {versions.get(minor, 'not published yet')} |")
 
 readme_path.write_text(f"{head}{START}\n" + "\n".join(rows) + f"\n{END}{tail}")

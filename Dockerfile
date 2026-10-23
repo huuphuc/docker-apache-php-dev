@@ -17,7 +17,7 @@ RUN apt-get update -y && apt-get -y upgrade \
     && apt-get purge -y --auto-remove software-properties-common gnupg2 \
     && rm -rf /var/lib/apt/lists/*
 
-ARG PHP_VERSION=8.2
+ARG PHP_VERSION=8.5
 
 RUN apt-get update -y \
     && apt-get install -y --no-install-recommends \

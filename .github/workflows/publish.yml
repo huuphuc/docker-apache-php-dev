@@ -1,9 +1,9 @@
 # Build, test and publish huuphuc/apache-php-dev (linux/amd64 + linux/arm64).
 #
 # - Push a git tag "v*" (e.g. v1.1.0): publishes every supported version as
-#   <php>-<git tag>, <php>, and latest (default version only).
+#   <php>-<git tag>, <php>, and latest (highest supported version only).
 # - Run manually from the Actions tab: publishes the chosen versions as
-#   <php>-<YYYYMMDD>, <php>, and latest (default version only).
+#   <php>-<YYYYMMDD>, <php>, and latest (highest supported version only).
 #
 # Images are always built without cache so they pick up the latest PHP and
 # Ubuntu packages. Nothing is tagged unless every build and test passes.
@@ -35,7 +35,7 @@ jobs:
     outputs:
       versions: ${{ steps.vars.outputs.versions }}
       suffix: ${{ steps.vars.outputs.suffix }}
-      default: ${{ steps.vars.outputs.default }}
+      latest: ${{ steps.vars.outputs.latest }}
     steps:
       - uses: actions/checkout@v7
 
@@ -65,7 +65,7 @@ jobs:
           {
             echo "versions=$versions"
             echo "suffix=$suffix"
-            echo "default=$(sed -n 's/^ARG PHP_VERSION=//p' Dockerfile)"
+            echo "latest=$(jq -r 'sort_by(split(".") | map(tonumber)) | last' .github/php-versions.json)"
           } >> "$GITHUB_OUTPUT"
 
   build:
@@ -171,7 +171,7 @@ jobs:
         env:
           PHP: ${{ matrix.php }}
           SUFFIX: ${{ needs.prepare.outputs.suffix }}
-          DEFAULT_PHP: ${{ needs.prepare.outputs.default }}
+          LATEST_PHP: ${{ needs.prepare.outputs.latest }}
         run: |
           set -euo pipefail
           pinned="$IMAGE:$PHP-$SUFFIX"
@@ -181,7 +181,7 @@ jobs:
           fi
 
           tags=("$IMAGE:$PHP" "$pinned")
-          if [[ "$PHP" == "$DEFAULT_PHP" ]]; then
+          if [[ "$PHP" == "$LATEST_PHP" ]]; then
             tags+=("$IMAGE:latest")
           fi
 
@@ -216,10 +216,10 @@ jobs:
       # Commits made with GITHUB_TOKEN do not trigger other workflows.
       - name: Update PHP versions in README
         env:
-          DEFAULT_PHP: ${{ needs.prepare.outputs.default }}
+          LATEST_PHP: ${{ needs.prepare.outputs.latest }}
         run: |
           set -euo pipefail
-          python3 .github/scripts/update-php-versions.py README.md .github/php-versions.json "$DEFAULT_PHP" /tmp/php-version
+          python3 .github/scripts/update-php-versions.py README.md .github/php-versions.json "$LATEST_PHP" /tmp/php-version
           if git diff --quiet README.md; then
             echo "README already lists these PHP versions."
             exit 0

@@ -16,10 +16,10 @@ Every tag is available for `linux/amd64` and `linux/arm64`. Current PHP version 
 <!-- php-versions:start -->
 | Tag | PHP |
 | --- | --- |
-| `8.2`, `latest` | 8.2.35 |
+| `8.2` | 8.2.35 |
 | `8.3` | 8.3.36 |
 | `8.4` | 8.4.27 |
-| `8.5` | 8.5.12 |
+| `8.5`, `latest` | 8.5.12 |
 <!-- php-versions:end -->
 
 | Tag | Meaning |
@@ -27,7 +27,7 @@ Every tag is available for `linux/amd64` and `linux/arm64`. Current PHP version 
 | `<php>`, e.g. `8.5` | Newest build of that PHP version. Moves whenever the image is rebuilt. |
 | `<php>-v<release>`, e.g. `8.5-v1.1` | A release of this repository. Never overwritten; pin this for reproducible setups. |
 | `<php>-<YYYYMMDD>`, e.g. `8.5-20261023` | A rebuild made on that day to pick up PHP/Ubuntu updates. Only another rebuild on the same day replaces it. |
-| `latest` | The default PHP version (currently `8.2`). |
+| `latest` | The highest supported PHP version (currently `8.5`). |
 
 The PHP version inside a pinned tag (`-v<release>`, `-<YYYYMMDD>`) is listed in the summary of the
 [Publish workflow run](https://github.com/huuphuc/docker-apache-php-dev/actions/workflows/publish.yml) that built it.
@@ -39,7 +39,7 @@ Mount your project at `/var/www/dev`. Apache serves **`/var/www/dev/public`**, s
 project needs a `public/` directory (Laravel, Symfony and most frameworks already have one).
 
 ```bash
-docker run --rm -p 8080:80 -v "$PWD:/var/www/dev" huuphuc/apache-php-dev:8.2
+docker run --rm -p 8080:80 -v "$PWD:/var/www/dev" huuphuc/apache-php-dev:8.5
 ```
 
 Open http://localhost:8080. Without a mount you get a placeholder page showing the PHP version.
@@ -49,7 +49,7 @@ With Docker Compose:
 ```yaml
 services:
   php:
-    image: huuphuc/apache-php-dev:8.2
+    image: huuphuc/apache-php-dev:8.5
     volumes:
       - .:/var/www/dev
     ports:
@@ -75,7 +75,7 @@ docker compose exec php php -v
 **PHP settings.** The image's overrides live in `/etc/php/<version>/{apache2,cli}/conf.d/custom.ini`
 (see [`configs/php.ini`](configs/php.ini)): short open tags on, errors displayed, 64M upload/post limit.
 To change them, mount your own ini file into both directories, for example
-`-v ./my.ini:/etc/php/8.2/apache2/conf.d/zz-my.ini`. Restart the container after changing it.
+`-v ./my.ini:/etc/php/8.5/apache2/conf.d/zz-my.ini`. Restart the container after changing it.
 
 **Logs.** Apache access and error logs, including PHP errors, are written to the container output.
 View them with `docker logs <container>` or `docker compose logs php`.
@@ -92,7 +92,7 @@ hosts. Use `docker compose exec -u www-data php ...`, or fix ownership afterward
 ## Building locally
 
 ```bash
-./build.sh        # build and test the default version (ARG PHP_VERSION in the Dockerfile)
+./build.sh        # build and test the default version (ARG PHP_VERSION in the Dockerfile, currently 8.5)
 ./build.sh 8.3    # build and test PHP 8.3
 ./test.sh 8.3     # re-run the smoke test against the locally built "apache-php-dev" image
 ```
@@ -112,5 +112,5 @@ build and test every version on both architectures, but publish nothing.
 
 Nothing is tagged on Docker Hub unless every selected version builds and passes `test.sh` on both
 architectures. Supported versions are listed in [`.github/php-versions.json`](.github/php-versions.json);
-the default version (`latest`) is `ARG PHP_VERSION` in the [`Dockerfile`](Dockerfile).
+`latest` always points at the highest one. `ARG PHP_VERSION` in the [`Dockerfile`](Dockerfile) is only the default for local builds.
 Each publish also copies this README to the Docker Hub description.
