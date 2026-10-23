@@ -73,9 +73,26 @@ docker compose exec php php -v
 ## Configuration
 
 **PHP settings.** The image's overrides live in `/etc/php/<version>/{apache2,cli}/conf.d/custom.ini`
-(see [`configs/php.ini`](configs/php.ini)): short open tags on, errors displayed, 64M upload/post limit.
-To change them, mount your own ini file into both directories, for example
+(see [`configs/php.ini`](configs/php.ini)): short open tags on, errors displayed, limits from the environment variables below.
+For any other setting, mount your own ini file into both directories, for example
 `-v ./my.ini:/etc/php/8.5/apache2/conf.d/zz-my.ini`. Restart the container after changing it.
+
+**Environment variables.** Common PHP limits can be set per project without an ini file. They apply
+to the web server and the CLI. Recreate the container after changing them (`docker compose up -d`).
+
+| Variable | php.ini setting | Default |
+| --- | --- | --- |
+| `PHP_MEMORY_LIMIT` | `memory_limit` | `128M` |
+| `PHP_UPLOAD_MAX_FILESIZE` | `upload_max_filesize` | `64M` |
+| `PHP_POST_MAX_SIZE` | `post_max_size` | `64M` |
+
+```yaml
+services:
+  php:
+    image: huuphuc/apache-php-dev:8.5
+    environment:
+      PHP_MEMORY_LIMIT: 512M
+```
 
 **Logs.** Apache access and error logs, including PHP errors, are written to the container output.
 View them with `docker logs <container>` or `docker compose logs php`.

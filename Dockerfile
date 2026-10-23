@@ -47,6 +47,11 @@ RUN apt-get update -y \
     && apt-get -y clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Defaults for configs/php.ini; override with docker run -e / compose environment.
+ENV PHP_MEMORY_LIMIT=128M \
+    PHP_POST_MAX_SIZE=64M \
+    PHP_UPLOAD_MAX_FILESIZE=64M
+
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 COPY ./configs/apache2.conf /etc/apache2/apache2.conf
 COPY ./configs/app.conf /etc/apache2/sites-enabled/app.conf
